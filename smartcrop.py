@@ -3,8 +3,8 @@ from tqdm import tqdm
 import cv2 as cv
 import os
 
-EXTENSIONS = ("jpg", "JPG", "jpeg", ".JPEG", "PNG", "png")
-FOLDER_PATH = "/Users/cobanov/Development/imagenet-sample-images/images"
+EXTENSIONS = ("jpg", "JPG", "jpeg", "JPEG", "png", "PNG")
+FOLDER_PATH = "./" # Image Folder Path
 
 
 def detect(image_path, crop=False, square=True):
@@ -73,7 +73,7 @@ def get_filelist(folder_path):
 
 def main():
     filelist = get_filelist(FOLDER_PATH)
-    Parallel(n_jobs=8)(delayed(detect)(image) for image in tqdm(filelist))
+    Parallel(n_jobs=-1)(delayed(detect)(image) for image in tqdm(filelist))
 
 
 if __name__ == "__main__":
