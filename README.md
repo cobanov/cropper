@@ -4,7 +4,7 @@
 
 # Cropper
 
-Insanely fast smart cropping using OpenCV SIFT algorithm
+Insanely fast (multi-core) smart cropping using OpenCV SIFT algorithm
 
 ## Usage/Examples
 
