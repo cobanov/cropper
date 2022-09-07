@@ -1,9 +1,10 @@
 from joblib import Parallel, delayed
+from tqdm import tqdm
 import cv2 as cv
 import os
-from tqdm import tqdm
 
 EXTENSIONS = ("jpg", "JPG", "jpeg", ".JPEG", "PNG", "png")
+FOLDER_PATH = "/Users/cobanov/Development/imagenet-sample-images/images"
 
 
 def detect(image_path, crop=False, square=True):
@@ -71,7 +72,7 @@ def get_filelist(folder_path):
 
 
 def main():
-    filelist = get_filelist("/Users/cobanov/Development/imagenet-sample-images/images")
+    filelist = get_filelist(FOLDER_PATH)
     Parallel(n_jobs=8)(delayed(detect)(image) for image in tqdm(filelist))
 
 
