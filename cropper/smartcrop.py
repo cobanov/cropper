@@ -1,13 +1,14 @@
-from joblib import Parallel, delayed
-from tqdm import tqdm
-import cv2 as cv
 import os
 
+import cv2 as cv
+import filelister as fs
+from joblib import Parallel, delayed
+from tqdm import tqdm
+
 EXTENSIONS = ("jpg", "JPG", "jpeg", "JPEG", "png", "PNG")
-FOLDER_PATH = "./" # Image Folder Path
 
 
-def detect(image_path, crop=False, square=True):
+def detect(image_path, outdir="./cropped", crop=False, square=True):
 
     img = cv.imread(image_path)
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
@@ -34,16 +35,16 @@ def detect(image_path, crop=False, square=True):
     if crop and not square:
         cropped_image = img[y_min:y_max, x_min:x_max]
 
-        image_relative = os.path.splitext(image_path.split("/")[-1])[0]
-        cv.imwrite(f"cropped/{image_relative}_out.jpeg", cropped_image)
+        image_relative = image_path.split("/")[-1]
+        cv.imwrite(os.path.join(outdir, image_relative), cropped_image)
         # print(f"cropped/{image_relative}_out.jpeg")
 
     elif crop and square:
 
         cropped_image = img[squared_y_min:squared_y_max, squared_x_min:squared_x_max]
 
-        image_relative = os.path.splitext(image_path.split("/")[-1])[0]
-        cv.imwrite(f"cropped/{image_relative}_out.jpeg", cropped_image)
+        image_relative = image_path.split("/")[-1]
+        cv.imwrite(os.path.join(outdir, image_relative), cropped_image)
         # print(f"Square cropped/{image_relative}_out.jpeg")
 
     else:
@@ -56,25 +57,13 @@ def detect(image_path, crop=False, square=True):
             2,
         )
 
-        image_relative = os.path.splitext(image_path.split("/")[-1])[0]
-        cv.imwrite(f"results/{image_relative}_out.jpeg", img)
+        image_relative = image_path.split("/")[-1]
+        cv.imwrite(os.path.join(outdir, image_relative), img)
         # print(f"results/{image_relative}_out.jpeg")
 
 
-def get_filelist(folder_path):
-    for path, _, files in os.walk(folder_path):
-        absolute_image_paths = [
-            os.path.join(path, filename)
-            for filename in files
-            if filename.endswith(EXTENSIONS)
-        ]
-    return absolute_image_paths
-
-
-def main():
-    filelist = get_filelist(FOLDER_PATH)
-    Parallel(n_jobs=-1)(delayed(detect)(image) for image in tqdm(filelist))
-
-
-if __name__ == "__main__":
-    main()
+def main(filelist, outdir, crop, square):
+    flist = fs.read_filelist(filelist)
+    Parallel(n_jobs=-1)(
+        delayed(detect)(image, outdir, crop, square) for image in tqdm(flist)
+    )
