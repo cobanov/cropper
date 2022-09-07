@@ -4,7 +4,7 @@
 
 # Cropper
 
-A brief description of what this project does and who it's for
+Insanely fast smart cropping using OpenCV SIFT algorithm
 
 ## Usage/Examples
 
