@@ -1,55 +1,79 @@
-import numpy as np
+from joblib import Parallel, delayed
 import cv2 as cv
 import os
+from tqdm import tqdm
+
+EXTENSIONS = ("jpg", "JPG", "jpeg", ".JPEG", "PNG", "png")
 
 
-def detect(folder_path):
-    for path, subdirs, files in os.walk("test_images"):
-        for filename in files:
-            if filename.endswith(".jpeg"):
-                p = os.path.join(path, filename)
+def detect(image_path, crop=False, square=True):
 
-                img = cv.imread(p)
-                gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-                sift = cv.SIFT_create(edgeThreshold=8)
-                kp = sift.detect(gray, None)
+    img = cv.imread(image_path)
+    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    sift = cv.SIFT_create(edgeThreshold=8)
+    kp = sift.detect(gray, None)
 
-                all_points = [i.pt for i in kp]
-                x_points = [z[0] for z in all_points]
-                y_points = [z[1] for z in all_points]
-                thresh = 0
-                x_min, y_min = int(min(x_points)) - thresh, int(min(y_points) - thresh)
-                x_max, y_max = int(max(x_points)) + thresh, int(max(y_points) + thresh)
-                min_side = min((x_max - x_min), (y_max - y_min))
-                max_side = max((x_max - x_min), (y_max - y_min))
-                x_mean, y_mean = int((x_max + x_min) / 2), int((y_max + y_min) / 2)
-                # img = cv.drawKeypoints(img, kp, img)
-                cv.rectangle(img, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
-                cv.rectangle(
-                    img,
-                    (x_mean - int(min_side / 2), y_mean - int(min_side / 2)),
-                    (x_mean + int(min_side / 2), y_mean + int(min_side / 2)),
-                    (0, 0, 255),
-                    2,
-                )
-                # cv.rectangle(
-                #     img,
-                #     (x_mean - int(max_side / 2), y_mean - int(max_side / 2)),
-                #     (x_mean + int(max_side / 2), y_mean + int(max_side / 2)),
-                #     (0, 255, 0),
-                #     0,
-                # )
+    all_points = [i.pt for i in kp]
+    x_points = [z[0] for z in all_points]
+    y_points = [z[1] for z in all_points]
+    thresh = 0
+    x_min, y_min = int(min(x_points)) - thresh, int(min(y_points) - thresh)
+    x_max, y_max = int(max(x_points)) + thresh, int(max(y_points) + thresh)
+    min_side = min((x_max - x_min), (y_max - y_min))
+    max_side = max((x_max - x_min), (y_max - y_min))
+    x_mean, y_mean = int((x_max + x_min) / 2), int((y_max + y_min) / 2)
+    # img = cv.drawKeypoints(img, kp, img)
+    squared_x_min, squared_x_max = x_mean - int(min_side / 2), x_mean + int(
+        min_side / 2
+    )
+    squared_y_min, squared_y_max = y_mean - int(min_side / 2), y_mean + int(
+        min_side / 2
+    )
 
-                cv.imwrite(f"results/out_{filename}", img)
-                print(f"results/out_{filename}")
+    if crop and not square:
+        cropped_image = img[y_min:y_max, x_min:x_max]
+
+        image_relative = os.path.splitext(image_path.split("/")[-1])[0]
+        cv.imwrite(f"cropped/{image_relative}_out.jpeg", cropped_image)
+        # print(f"cropped/{image_relative}_out.jpeg")
+
+    elif crop and square:
+
+        cropped_image = img[squared_y_min:squared_y_max, squared_x_min:squared_x_max]
+
+        image_relative = os.path.splitext(image_path.split("/")[-1])[0]
+        cv.imwrite(f"cropped/{image_relative}_out.jpeg", cropped_image)
+        # print(f"Square cropped/{image_relative}_out.jpeg")
+
+    else:
+        cv.rectangle(img, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
+        cv.rectangle(
+            img,
+            (squared_x_min, squared_y_min),
+            (squared_x_max, squared_y_max),
+            (0, 0, 255),
+            2,
+        )
+
+        image_relative = os.path.splitext(image_path.split("/")[-1])[0]
+        cv.imwrite(f"results/{image_relative}_out.jpeg", img)
+        # print(f"results/{image_relative}_out.jpeg")
 
 
-detect("./test_images")
+def get_filelist(folder_path):
+    for path, _, files in os.walk(folder_path):
+        absolute_image_paths = [
+            os.path.join(path, filename)
+            for filename in files
+            if filename.endswith(EXTENSIONS)
+        ]
+    return absolute_image_paths
 
 
-# def combineBoundingBox(box1, box2):
-#     x = min(box1[0], box2[0])
-#     y = min(box1[1], box2[1])
-#     w = box2[0] + box2[2] - box1[0]
-#     h = max(box1[1] + box1[3], box2[1] + box2[3]) - y
-#     return (x, y, w, h)
+def main():
+    filelist = get_filelist("/Users/cobanov/Development/imagenet-sample-images/images")
+    Parallel(n_jobs=8)(delayed(detect)(image) for image in tqdm(filelist))
+
+
+if __name__ == "__main__":
+    main()
