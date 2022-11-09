@@ -17,7 +17,8 @@ class cropper:
         return self.img
 
     def display(self):
-        Image.fromarray(self.img).show()
+        pil_image = cv.cvtColor(self.img, cv.COLOR_BGR2RGB)
+        Image.fromarray(pil_image).show()
 
     def _get_sift(self):
         gray = cv.cvtColor(self.img, cv.COLOR_BGR2GRAY)
@@ -25,7 +26,7 @@ class cropper:
         kp = sift.detect(gray, None)
         return kp
 
-    def detect(self):
+    def _detect(self):
         self.kp = self._get_sift()
         self.all_points = [i.pt for i in self.kp]
 
@@ -64,7 +65,12 @@ class cropper:
         )
 
     def crop(self, outdir="./cropped", cropped=True, squared=True):
-        self.detect()
+
+        if not os.path.exists(outdir):
+            os.makedirs(outdir, exist_ok=False)
+            print(f"Directory {outdir} created successfully")
+
+        self._detect()
         if cropped and not squared:
             cropped_image = self.img[self.y_min : self.y_max, self.x_min : self.x_max]
             image_relative = self.path.split("/")[-1]
@@ -106,5 +112,4 @@ class cropper:
 
 img1 = cropper()
 img1.read("./assets/result_2.jpeg")
-# img1.detect()
 img1.crop(squared=False)

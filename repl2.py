@@ -1,10 +1,11 @@
+import smartcrop2
 import os
-import cv2 as cv
-from PIL import Image
 
-img = cv.imread("./assets/result_1.jpg")
-gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-sift = cv.SIFT_create(edgeThreshold=8)
-kp = sift.detect(gray, None)
-all_points = [i.pt for i in kp]
- all_points]
+for root, dirs, files in os.walk("./assets"):
+    files = [os.path.join(root, path) for path in files]
+
+for i in files:
+    img = smartcrop2.cropper()
+    img.read(i)
+    # img.display()
+    img.crop()
