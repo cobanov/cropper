@@ -1,6 +1,6 @@
 import click
 
-from cropper.smartcrop import main as smartcrop
+from smartcrop import main as smartcrop
 
 
 @click.command()
